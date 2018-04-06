@@ -1,4 +1,4 @@
-// https://facette.io/ Version 0.1.0. Copyright 2018 Vincent Batoufflet.
+// https://facette.io/ Version 0.2.0. Copyright 2018 Vincent Batoufflet.
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -20,6 +20,10 @@
             },
             y: {
                 center: false,
+                label: {
+                    size: 12,
+                    text: null
+                },
                 max: null,
                 min: null,
                 stack: false,
@@ -2452,6 +2456,11 @@
                     height: this.height - 2 * this.config.margin,
                     width: this.width - 2 * this.config.margin
                 };
+
+                if (this.config.axes.y.label.text) {
+                    this.area.left += this.config.margin;
+                    this.area.width -= this.config.margin;
+                }
             },
             beforeDraw: function beforeDraw() {
                 Object.assign(this.area, {
@@ -2510,6 +2519,21 @@
                 this.ctx.stroke();
 
                 // Draw Y axis
+                if (this.config.axes.y.label.text) {
+                    this.ctx.save();
+
+                    this.ctx.font = this.config.axes.y.label.size + "px " + this.config.font.family;
+                    this.ctx.fillStyle = Chart.helpers.toRGBA(this.config.font.color, 0.65);
+                    this.ctx.textAlign = "center";
+                    this.ctx.textBaseline = "middle";
+
+                    this.ctx.translate(-this.area.left + this.config.margin, this.area.height / 2);
+                    this.ctx.rotate(-Math.PI / 2);
+                    this.ctx.fillText(this.config.axes.y.label.text, 0, 0);
+
+                    this.ctx.restore();
+                }
+
                 this.ctx.font = this.config.axes.y.ticks.font.size + "px " + this.config.font.family;
                 this.ctx.textAlign = "right";
                 this.ctx.textBaseline = "middle";
@@ -2582,7 +2606,7 @@
                     return;
                 }
 
-                ["mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
+                ["mousedown", "mouseup", "mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
                     _this.canvas.removeEventListener(event, _this.config.events.handleEvent);
                 });
             },
@@ -2593,7 +2617,7 @@
                     return;
                 }
 
-                ["mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
+                ["mousedown", "mouseup", "mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
                     _this2.canvas.addEventListener(event, _this2.config.events.handleEvent.bind(_this2));
                 });
             }
