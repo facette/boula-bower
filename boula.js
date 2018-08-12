@@ -1,4 +1,4 @@
-// https://facette.io/ Version 0.2.0. Copyright 2018 Vincent Batoufflet.
+// https://facette.io/ Version 0.3.0. Copyright 2018 Vincent Batoufflet.
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -24,6 +24,7 @@
                     size: 12,
                     text: null
                 },
+                lines: [],
                 max: null,
                 min: null,
                 stack: false,
@@ -35,6 +36,9 @@
                     format: d3.format(".2r")
                 }
             }
+        },
+        background: {
+            color: null
         },
         colors: ["#7cb5ec", "#434348", "#90ed7d", "#f7a35c", "#8085e9", "#f15c80", "#e4d354", "#8085e8", "#8d4653", "#91e8e1"],
         events: {
@@ -366,11 +370,10 @@
 
       try {
         value[symToStringTag] = undefined;
-        var unmasked = true;
       } catch (e) {}
 
       var result = nativeObjectToString.call(value);
-      if (unmasked) {
+      {
         if (isOwn) {
           value[symToStringTag] = tag;
         } else {
@@ -1055,7 +1058,7 @@
 
     var _cloneBuffer = createCommonjsModule(function (module, exports) {
     /** Detect free variable `exports`. */
-    var freeExports = 'object' == 'object' && exports && !exports.nodeType && exports;
+    var freeExports = exports && !exports.nodeType && exports;
 
     /** Detect free variable `module`. */
     var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -1455,7 +1458,7 @@
 
     var isBuffer_1 = createCommonjsModule(function (module, exports) {
     /** Detect free variable `exports`. */
-    var freeExports = 'object' == 'object' && exports && !exports.nodeType && exports;
+    var freeExports = exports && !exports.nodeType && exports;
 
     /** Detect free variable `module`. */
     var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -1624,7 +1627,7 @@
 
     var _nodeUtil = createCommonjsModule(function (module, exports) {
     /** Detect free variable `exports`. */
-    var freeExports = 'object' == 'object' && exports && !exports.nodeType && exports;
+    var freeExports = exports && !exports.nodeType && exports;
 
     /** Detect free variable `module`. */
     var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -1638,6 +1641,14 @@
     /** Used to access faster Node.js helpers. */
     var nodeUtil = (function() {
       try {
+        // Use `util.types` for Node.js 10+.
+        var types = freeModule && freeModule.require && freeModule.require('util').types;
+
+        if (types) {
+          return types;
+        }
+
+        // Legacy `process.binding('util')` for Node.js < 10.
         return freeProcess && freeProcess.binding && freeProcess.binding('util');
       } catch (e) {}
     }());
@@ -1861,10 +1872,10 @@
     var _nativeKeysIn = nativeKeysIn;
 
     /** Used for built-in method references. */
-    var objectProto$10 = Object.prototype;
+    var objectProto$a = Object.prototype;
 
     /** Used to check objects for own properties. */
-    var hasOwnProperty$8 = objectProto$10.hasOwnProperty;
+    var hasOwnProperty$8 = objectProto$a.hasOwnProperty;
 
     /**
      * The base implementation of `_.keysIn` which doesn't treat sparse arrays as dense.
@@ -2352,6 +2363,7 @@
     var merge_2 = merge_1.merge;
 
     function Chart(config) {
+        Chart.components.execute.call(this, "init");
         this.update(config);
         return this;
     }
@@ -2378,13 +2390,19 @@
         update: function update(config) {
             this.config = merge_1({}, defaultConfig, config);
 
-            // Get font defaults from body style
+            // Get defaults from body style
+            var style = getComputedStyle(document.body);
+
+            if (this.config.background.color === null) {
+                this.config.background.color = style.backgroundColor;
+            }
+
             if (this.config.font.color === null) {
-                this.config.font.color = getComputedStyle(document.body).color;
+                this.config.font.color = style.color;
             }
 
             if (this.config.font.family === null) {
-                this.config.font.family = getComputedStyle(document.body).fontFamily;
+                this.config.font.family = style.fontFamily;
             }
 
             // Initialize canvas
@@ -2447,7 +2465,10 @@
         Chart.components.register({
             layout: function layout() {
                 // Clear canvas
+                this.ctx.fillStyle = this.config.background.color;
                 this.ctx.clearRect(0, 0, this.width, this.height);
+                this.ctx.rect(0, 0, this.width, this.height);
+                this.ctx.fill();
 
                 // Set base area position
                 this.area = {
@@ -2571,9 +2592,7 @@
                                 keys.push(series.name);
                             });
 
-                            if (this.config.axes.y.stack == "percent") {
-                                // TODO: reimplement percent
-                            }
+                            if (this.config.axes.y.stack == "percent") ;
 
                             var stack = d3.stack().keys(keys).order(d3.stackOrderReverse);
 
@@ -2624,6 +2643,103 @@
         });
     }
 
+    function lines (Chart) {
+        var component = {
+            init: function init() {
+                Object.assign(this, {
+                    addLine: component._add,
+                    removeLine: component._remove
+                });
+            },
+            afterDraw: function afterDraw() {
+                var _this = this;
+
+                this.ctx.save();
+                this.ctx.font = this.config.axes.y.ticks.font.size - 2 + "px " + this.config.font.family;
+                this.ctx.textAlign = "right";
+                this.ctx.textBaseline = "middle";
+
+                this.config.axes.y.lines.forEach(function (line) {
+                    var pos = _this.yScale(line.y),
+                        xDelta = 0;
+
+                    if (!line.color) {
+                        line.color = _this.config.font.color;
+                    }
+
+                    if (line.label) {
+                        var text = typeof line.label == "boolean" ? _this.yFormat(line.y) : line.label,
+                            measure = _this.ctx.measureText(text);
+
+                        var yDelta = 6,
+                            yDeltaLow = Math.round(yDelta / 3),
+                            yDeltaMedium = Math.round(yDelta * 2 / 3),
+                            yStart = -_this.config.axes.x.ticks.size - measure.width;
+
+                        _this.ctx.save();
+
+                        xDelta = Math.abs(yStart) - _this.area.left + _this.config.margin / 2;
+                        if (xDelta > 0) {
+                            _this.ctx.translate(xDelta, 0);
+                        }
+
+                        _this.ctx.fillStyle = line.color;
+
+                        // Draw label background
+                        _this.ctx.beginPath();
+                        _this.ctx.moveTo(yStart, pos - yDelta);
+                        _this.ctx.lineTo(-_this.config.axes.x.ticks.size, pos - yDelta);
+                        _this.ctx.quadraticCurveTo(-yDeltaMedium, pos - yDelta, 0, pos);
+                        _this.ctx.quadraticCurveTo(-yDeltaMedium, pos + yDelta, -_this.config.axes.x.ticks.size, pos + yDelta);
+                        _this.ctx.lineTo(yStart, pos + yDelta);
+                        _this.ctx.quadraticCurveTo(yStart - yDeltaLow, pos + yDelta, yStart - yDeltaLow, pos + yDeltaMedium);
+                        _this.ctx.lineTo(yStart - yDeltaLow, pos - yDeltaMedium);
+                        _this.ctx.quadraticCurveTo(yStart - yDeltaLow, pos - yDelta, yStart, pos - yDelta);
+                        _this.ctx.closePath();
+                        _this.ctx.fill();
+
+                        // Draw text on label
+                        _this.ctx.fillStyle = Chart.helpers.toRGBA(_this.config.background.color, 0.8);
+                        _this.ctx.fillText(text, -_this.config.axes.x.ticks.size, pos);
+
+                        _this.ctx.restore();
+                    }
+
+                    // Draw line
+                    _this.ctx.lineWidth = 1;
+                    _this.ctx.strokeStyle = line.color;
+
+                    _this.ctx.beginPath();
+                    if (line.dashed) {
+                        _this.ctx.setLineDash([4, 4]);
+                    }
+                    _this.ctx.moveTo(xDelta > 0 ? xDelta : 0, pos);
+                    _this.ctx.lineTo(_this.area.width, pos);
+                    _this.ctx.stroke();
+                });
+
+                this.ctx.restore();
+            },
+            _add: function _add(id, line) {
+                this.config.axes.y.lines.push(Object.assign(line, { id: id }));
+                this.draw();
+            },
+            _remove: function _remove(id) {
+                var length = this.config.axes.y.lines.length;
+
+                this.config.axes.y.lines = this.config.axes.y.lines.filter(function (a) {
+                    return a.id !== id;
+                });
+
+                if (this.config.axes.y.lines.length !== length) {
+                    this.draw();
+                }
+            }
+        };
+
+        Chart.components.register(component);
+    }
+
     function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
     function scales (Chart) {
@@ -2648,26 +2764,32 @@
                 };
             },
             _getDomain: function _getDomain(axis, key) {
+                var _this2 = this;
+
                 var min = void 0,
                     max = void 0;
 
                 if (this.config.axes[axis].min !== null) {
                     min = this.config.axes[axis].min;
                 } else {
-                    min = d3.min(this.data, function (a) {
-                        return d3.min(a, function (b) {
-                            return b[key];
-                        });
+                    min = d3.min(this.data, function (datum, idx) {
+                        if (!_this2.config.series[idx].disabled) {
+                            return d3.min(datum, function (a) {
+                                return a[key];
+                            });
+                        }
                     });
                 }
 
                 if (this.config.axes[axis].max !== null) {
                     max = this.config.axes[axis].max;
                 } else {
-                    max = d3.max(this.data, function (a) {
-                        return d3.max(a, function (b) {
-                            return b[key];
-                        });
+                    max = d3.max(this.data, function (datum, idx) {
+                        if (!_this2.config.series[idx].disabled) {
+                            return d3.max(datum, function (a) {
+                                return a[key];
+                            });
+                        }
                     });
                 }
 
@@ -2692,7 +2814,13 @@
     }
 
     function series (Chart) {
-        Chart.components.register({
+        var component = {
+            init: function init() {
+                Object.assign(this, {
+                    highlightSeries: component._highlight,
+                    toggleSeries: component._toggle
+                });
+            },
             draw: function draw() {
                 var _this = this;
 
@@ -2713,16 +2841,25 @@
                     return _this.yScale(a.y1);
                 }).context(this.ctx);
 
+                var top = this.config.axes.y.max ? this.yScale(this.config.axes.y.max) : 0,
+                    bottom = (this.config.axes.y.min ? this.yScale(this.config.axes.y.min) : this.area.height) - top;
+
                 this.ctx.save();
-                this.ctx.rect(0, 0, this.area.width, this.area.height);
+                this.ctx.rect(0, top, this.area.width, bottom);
                 this.ctx.clip();
 
                 this.data.forEach(function (datum, idx) {
+                    if (_this.config.series[idx].disabled) {
+                        return;
+                    }
+
+                    var fade = typeof _this.config.series[idx]._fade == "boolean" ? _this.config.series[idx]._fade : false;
+
                     if (!_this.config.series[idx].color) {
                         _this.config.series[idx].color = _this.config.colors[idx % _this.config.colors.length];
                     }
 
-                    if (_this.config.type == "area") {
+                    if (_this.config.type == "area" && !_this._highlight) {
                         _this.ctx.beginPath();
                         area(datum);
                         _this.ctx.fillStyle = Chart.helpers.toRGBA(_this.config.series[idx].color, 0.65);
@@ -2731,14 +2868,34 @@
 
                     _this.ctx.beginPath();
                     line(datum);
-                    _this.ctx.strokeStyle = _this.config.series[idx].color;
+                    _this.ctx.strokeStyle = Chart.helpers.toRGBA(_this.config.series[idx].color, fade ? 0.1 : 1);
                     _this.ctx.lineWidth = 1.5;
                     _this.ctx.stroke();
                 });
 
                 this.ctx.restore();
+            },
+            _highlight: function _highlight(idx, state) {
+                this.config.series.forEach(function (series, i) {
+                    series._fade = i !== idx ? state : false;
+                });
+
+                this._highlight = state;
+                this.draw();
+            },
+            _toggle: function _toggle(idx) {
+                var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+                if (idx >= this.config.series.length) {
+                    return;
+                }
+
+                this.config.series[idx].disabled = typeof state == "boolean" ? !state : !this.config.series[idx].disabled;
+                this.draw();
             }
-        });
+        };
+
+        Chart.components.register(component);
     }
 
     function titles (Chart) {
@@ -2790,12 +2947,14 @@
     }
 
     Chart.helpers = helpers;
+    Chart.colors = defaultConfig.colors;
     Chart.components = components;
 
     area(Chart);
     axes(Chart);
     data(Chart);
     events(Chart);
+    lines(Chart);
     scales(Chart);
     series(Chart);
     titles(Chart);
