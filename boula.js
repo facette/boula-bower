@@ -1,4 +1,4 @@
-// https://facette.io/ Version 0.3.0. Copyright 2018 Vincent Batoufflet.
+// https://facette.io/ Version 0.3.1. Copyright 2018 Vincent Batoufflet.
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -2706,6 +2706,8 @@
                     }
 
                     // Draw line
+                    _this.ctx.save();
+
                     _this.ctx.lineWidth = 1;
                     _this.ctx.strokeStyle = line.color;
 
@@ -2716,6 +2718,8 @@
                     _this.ctx.moveTo(xDelta > 0 ? xDelta : 0, pos);
                     _this.ctx.lineTo(_this.area.width, pos);
                     _this.ctx.stroke();
+
+                    _this.ctx.restore();
                 });
 
                 this.ctx.restore();
