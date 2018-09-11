@@ -1,4 +1,4 @@
-// https://facette.io/ Version 0.3.1. Copyright 2018 Vincent Batoufflet.
+// https://facette.io/ Version 0.4.0. Copyright 2018 Vincent Batoufflet.
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -40,7 +40,7 @@
         background: {
             color: null
         },
-        colors: ["#7cb5ec", "#434348", "#90ed7d", "#f7a35c", "#8085e9", "#f15c80", "#e4d354", "#8085e8", "#8d4653", "#91e8e1"],
+        colors: ["#64b5f6", "#455a64", "#aed581", "#ffb74d", "#9575cd", "#f06292", "#ffd54f", "#4db6ac", "#4dd0e1", "#e57373", "#7986cb", "#a1887f"],
         events: {
             afterDraw: null,
             handleEvent: null
@@ -2580,6 +2580,10 @@
                             this.config.series.forEach(function (series) {
                                 if (series.points) {
                                     series.points.forEach(function (point) {
+                                        if (series.disabled) {
+                                            return;
+                                        }
+
                                         var date = point[0] * 1000;
                                         if (!data[date]) {
                                             data[date] = { date: date };
@@ -2592,7 +2596,20 @@
                                 keys.push(series.name);
                             });
 
-                            if (this.config.axes.y.stack == "percent") ;
+                            if (this.config.axes.y.stack == "percent") {
+                                Object.keys(data).forEach(function (date) {
+                                    var keys = Object.keys(data[date]),
+                                        sum = keys.reduce(function (sum, key) {
+                                        return key != "date" ? sum + data[date][key] : sum;
+                                    }, 0);
+
+                                    keys.forEach(function (key) {
+                                        if (key != "date" && sum != 0) {
+                                            data[date][key] /= sum;
+                                        }
+                                    });
+                                });
+                            }
 
                             var stack = d3.stack().keys(keys).order(d3.stackOrderReverse);
 
@@ -2662,6 +2679,11 @@
                 this.config.axes.y.lines.forEach(function (line) {
                     var pos = _this.yScale(line.y),
                         xDelta = 0;
+
+                    // Skip lines outside of area
+                    if (pos < 0) {
+                        return;
+                    }
 
                     if (!line.color) {
                         line.color = _this.config.font.color;
@@ -2821,8 +2843,7 @@
         var component = {
             init: function init() {
                 Object.assign(this, {
-                    highlightSeries: component._highlight,
-                    toggleSeries: component._toggle
+                    selectSeries: component._select
                 });
             },
             draw: function draw() {
@@ -2830,7 +2851,9 @@
 
                 var area = void 0;
                 if (this.config.type == "area") {
-                    area = d3.area().x(function (a) {
+                    area = d3.area().defined(function (a) {
+                        return a.y1 !== null;
+                    }).x(function (a) {
                         return _this.xScale(a.x);
                     }).y0(function (a) {
                         return _this.yScale(a.y0 || 0);
@@ -2839,7 +2862,9 @@
                     }).context(this.ctx);
                 }
 
-                var line = d3.line().x(function (a) {
+                var line = d3.line().defined(function (a) {
+                    return a.y1 !== null;
+                }).x(function (a) {
                     return _this.xScale(a.x);
                 }).y(function (a) {
                     return _this.yScale(a.y1);
@@ -2857,8 +2882,6 @@
                         return;
                     }
 
-                    var fade = typeof _this.config.series[idx]._fade == "boolean" ? _this.config.series[idx]._fade : false;
-
                     if (!_this.config.series[idx].color) {
                         _this.config.series[idx].color = _this.config.colors[idx % _this.config.colors.length];
                     }
@@ -2872,29 +2895,35 @@
 
                     _this.ctx.beginPath();
                     line(datum);
-                    _this.ctx.strokeStyle = Chart.helpers.toRGBA(_this.config.series[idx].color, fade ? 0.1 : 1);
+                    _this.ctx.strokeStyle = _this.config.series[idx].color;
                     _this.ctx.lineWidth = 1.5;
                     _this.ctx.stroke();
                 });
 
                 this.ctx.restore();
             },
-            _highlight: function _highlight(idx, state) {
-                this.config.series.forEach(function (series, i) {
-                    series._fade = i !== idx ? state : false;
-                });
-
-                this._highlight = state;
-                this.draw();
-            },
-            _toggle: function _toggle(idx) {
-                var state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+            _select: function _select(idx) {
+                var toggle = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
                 if (idx >= this.config.series.length) {
                     return;
                 }
 
-                this.config.series[idx].disabled = typeof state == "boolean" ? !state : !this.config.series[idx].disabled;
+                if (!toggle) {
+                    var state = null;
+                    if (this.config.series.filter(function (a) {
+                        return !a.disabled;
+                    }).length == 1 && !this.config.series[idx].disabled) {
+                        state = false;
+                    }
+
+                    this.config.series.forEach(function (series, seriesIdx) {
+                        series.disabled = state !== null ? state : seriesIdx !== idx;
+                    });
+                } else {
+                    this.config.series[idx].disabled = !this.config.series[idx].disabled;
+                }
+
                 this.draw();
             }
         };
