@@ -1,4 +1,4 @@
-// https://facette.io/ Version 0.4.0. Copyright 2018 Vincent Batoufflet.
+// https://facette.io/ Version 0.4.1. Copyright 2018 Vincent Batoufflet.
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -6,61 +6,61 @@
 }(this, (function (d3) { 'use strict';
 
     var defaultConfig = {
-        axes: {
-            x: {
-                max: null,
-                min: null,
-                ticks: {
-                    count: 10,
-                    font: {
-                        size: 10
-                    },
-                    size: 6
-                }
+      axes: {
+        x: {
+          max: null,
+          min: null,
+          ticks: {
+            count: 10,
+            font: {
+              size: 10
             },
-            y: {
-                center: false,
-                label: {
-                    size: 12,
-                    text: null
-                },
-                lines: [],
-                max: null,
-                min: null,
-                stack: false,
-                ticks: {
-                    count: 3,
-                    font: {
-                        size: 10
-                    },
-                    format: d3.format(".2r")
-                }
-            }
+            size: 6
+          }
         },
-        background: {
-            color: null
-        },
-        colors: ["#64b5f6", "#455a64", "#aed581", "#ffb74d", "#9575cd", "#f06292", "#ffd54f", "#4db6ac", "#4dd0e1", "#e57373", "#7986cb", "#a1887f"],
-        events: {
-            afterDraw: null,
-            handleEvent: null
-        },
-        font: {
-            color: null,
-            family: null
-        },
-        margin: 24,
-        titles: {
-            main: {
-                size: 16,
-                text: null
+        y: {
+          center: false,
+          label: {
+            size: 12,
+            text: null
+          },
+          lines: [],
+          max: null,
+          min: null,
+          stack: false,
+          ticks: {
+            count: 3,
+            font: {
+              size: 10
             },
-            subtitle: {
-                size: 12,
-                text: null
-            }
+            format: d3.format(".2r")
+          }
+        }
+      },
+      background: {
+        color: null
+      },
+      colors: ["#64b5f6", "#455a64", "#aed581", "#ffb74d", "#9575cd", "#f06292", "#ffd54f", "#4db6ac", "#4dd0e1", "#e57373", "#7986cb", "#a1887f"],
+      events: {
+        afterDraw: null,
+        handleEvent: null
+      },
+      font: {
+        color: null,
+        family: null
+      },
+      margin: 24,
+      titles: {
+        main: {
+          size: 16,
+          text: null
         },
-        type: "area"
+        subtitle: {
+          size: 12,
+          text: null
+        }
+      },
+      type: "area"
     };
 
     /**
@@ -337,9 +337,9 @@
     var _root = root;
 
     /** Built-in value references. */
-    var Symbol = _root.Symbol;
+    var Symbol$1 = _root.Symbol;
 
-    var _Symbol = Symbol;
+    var _Symbol = Symbol$1;
 
     /** Used for built-in method references. */
     var objectProto = Object.prototype;
@@ -624,9 +624,9 @@
     var _getNative = getNative;
 
     /* Built-in method references that are verified to be native. */
-    var Map = _getNative(_root, 'Map');
+    var Map$1 = _getNative(_root, 'Map');
 
-    var _Map = Map;
+    var _Map = Map$1;
 
     /* Built-in method references that are verified to be native. */
     var nativeCreate = _getNative(Object, 'create');
@@ -1689,9 +1689,11 @@
      * @returns {*} Returns the property value.
      */
     function safeGet(object, key) {
-      return key == '__proto__'
-        ? undefined
-        : object[key];
+      if (key == '__proto__') {
+        return;
+      }
+
+      return object[key];
     }
 
     var _safeGet = safeGet;
@@ -2020,7 +2022,7 @@
           if (isArguments_1(objValue)) {
             newValue = toPlainObject_1(objValue);
           }
-          else if (!isObject_1(objValue) || (srcIndex && isFunction_1(objValue))) {
+          else if (!isObject_1(objValue) || isFunction_1(objValue)) {
             newValue = _initCloneObject(srcValue);
           }
         }
@@ -2363,626 +2365,649 @@
     var merge_2 = merge_1.merge;
 
     function Chart(config) {
-        Chart.components.execute.call(this, "init");
-        this.update(config);
-        return this;
+      Chart.components.execute.call(this, "init");
+      this.update(config);
+      return this;
     }
 
     Object.assign(Chart.prototype, {
-        destroy: function destroy() {
-            Chart.components.execute.call(this, "destroy");
-        },
-        draw: function draw() {
-            var _this = this;
+      destroy: function destroy() {
+        Chart.components.execute.call(this, "destroy");
+      },
+      draw: function draw() {
+        var _this = this;
 
-            this.ctx.save();
+        this.ctx.save();
+        ["update", "layout", "beforeDraw", "draw", "afterDraw"].forEach(function (step) {
+          return Chart.components.execute.call(_this, step);
+        });
+        this.ctx.restore();
 
-            ["update", "layout", "beforeDraw", "draw", "afterDraw"].forEach(function (step) {
-                return Chart.components.execute.call(_this, step);
-            });
-
-            this.ctx.restore();
-
-            if (this.config.events.afterDraw) {
-                this.config.events.afterDraw();
-            }
-        },
-        update: function update(config) {
-            this.config = merge_1({}, defaultConfig, config);
-
-            // Get defaults from body style
-            var style = getComputedStyle(document.body);
-
-            if (this.config.background.color === null) {
-                this.config.background.color = style.backgroundColor;
-            }
-
-            if (this.config.font.color === null) {
-                this.config.font.color = style.color;
-            }
-
-            if (this.config.font.family === null) {
-                this.config.font.family = style.fontFamily;
-            }
-
-            // Initialize canvas
-            this.height = this.config.bindTo.parentNode.clientHeight;
-            this.width = this.config.bindTo.parentNode.clientWidth;
-
-            this.canvas = d3.select(this.config.bindTo).attr("height", this.height).attr("width", this.width).node();
-
-            this.ctx = this.canvas.getContext("2d");
-
-            // Handle HiDPI display
-            Chart.helpers.hidpiScale(this);
+        if (this.config.events.afterDraw) {
+          this.config.events.afterDraw();
         }
+      },
+      update: function update(config) {
+        this.config = merge_1({}, defaultConfig, config); // Get defaults from body style
+
+        var style = getComputedStyle(document.body);
+
+        if (this.config.background.color === null) {
+          this.config.background.color = style.backgroundColor;
+        }
+
+        if (this.config.font.color === null) {
+          this.config.font.color = style.color;
+        }
+
+        if (this.config.font.family === null) {
+          this.config.font.family = style.fontFamily;
+        } // Initialize canvas
+
+
+        this.height = this.config.bindTo.parentNode.clientHeight;
+        this.width = this.config.bindTo.parentNode.clientWidth;
+        this.canvas = d3.select(this.config.bindTo).attr("height", this.height).attr("width", this.width).node();
+        this.ctx = this.canvas.getContext("2d"); // Handle HiDPI display
+
+        Chart.helpers.hidpiScale(this);
+      }
     });
 
     var helpers = {
-        hidpiScale: function hidpiScale(chart) {
-            var ratio = devicePixelRatio || 1;
-            if (ratio == 1) {
-                return;
-            }
+      hidpiScale: function hidpiScale(chart) {
+        var ratio = devicePixelRatio || 1;
 
-            var height = chart.canvas.height,
-                width = chart.canvas.width;
-
-            chart.canvas.height *= ratio;
-            chart.canvas.width *= ratio;
-
-            Object.assign(chart.canvas.style, {
-                height: height + "px",
-                width: width + "px"
-            });
-
-            chart.ctx.scale(ratio, ratio);
-        },
-        toRGBA: function toRGBA(color, opacity) {
-            var c = d3.rgb(color);
-            return "rgba(" + c.r + ", " + c.g + ", " + c.b + ", " + (typeof opacity == "number" ? opacity : 1) + ")";
+        if (ratio == 1) {
+          return;
         }
+
+        var height = chart.canvas.height,
+            width = chart.canvas.width;
+        chart.canvas.height *= ratio;
+        chart.canvas.width *= ratio;
+        Object.assign(chart.canvas.style, {
+          height: "".concat(height, "px"),
+          width: "".concat(width, "px")
+        });
+        chart.ctx.scale(ratio, ratio);
+      },
+      toRGBA: function toRGBA(color, opacity) {
+        var c = d3.rgb(color);
+        return "rgba(".concat(c.r, ", ").concat(c.g, ", ").concat(c.b, ", ").concat(typeof opacity == "number" ? opacity : 1, ")");
+      }
     };
 
     var components = {
-        _components: [],
+      _components: [],
+      execute: function execute(name) {
+        var _this = this;
 
-        execute: function execute(name) {
-            var _this = this;
-
-            components._components.forEach(function (component) {
-                if (component.hasOwnProperty(name)) {
-                    component[name].call(_this);
-                }
-            });
-        },
-        register: function register(component) {
-            components._components.push(component);
-        }
+        components._components.forEach(function (component) {
+          if (component.hasOwnProperty(name)) {
+            component[name].call(_this);
+          }
+        });
+      },
+      register: function register(component) {
+        components._components.push(component);
+      }
     };
 
     function area (Chart) {
-        Chart.components.register({
-            layout: function layout() {
-                // Clear canvas
-                this.ctx.fillStyle = this.config.background.color;
-                this.ctx.clearRect(0, 0, this.width, this.height);
-                this.ctx.rect(0, 0, this.width, this.height);
-                this.ctx.fill();
+      var component = {
+        init: function init() {
+          Object.assign(this, {
+            clear: component._clear
+          });
+        },
+        layout: function layout() {
+          // Clear canvas
+          component._clear.call(this); // Set base area position
 
-                // Set base area position
-                this.area = {
-                    left: this.config.margin,
-                    top: this.config.margin,
-                    height: this.height - 2 * this.config.margin,
-                    width: this.width - 2 * this.config.margin
-                };
 
-                if (this.config.axes.y.label.text) {
-                    this.area.left += this.config.margin;
-                    this.area.width -= this.config.margin;
-                }
-            },
-            beforeDraw: function beforeDraw() {
-                Object.assign(this.area, {
-                    left: this.width - this.area.width - this.config.margin,
-                    top: this.height - this.area.height - this.config.margin
-                });
+          this.area = {
+            left: this.config.margin,
+            top: this.config.margin,
+            height: this.height - 2 * this.config.margin,
+            width: this.width - 2 * this.config.margin
+          };
 
-                this.ctx.translate(this.area.left, this.area.top);
-            },
-            draw: function draw() {
-                var _this = this;
+          if (this.config.axes.y.label.text) {
+            this.area.left += this.config.margin;
+            this.area.width -= this.config.margin;
+          }
+        },
+        beforeDraw: function beforeDraw() {
+          Object.assign(this.area, {
+            left: this.width - this.area.width - this.config.margin,
+            top: this.height - this.area.height - this.config.margin
+          });
+          this.ctx.translate(this.area.left, this.area.top);
+        },
+        draw: function draw() {
+          var _this = this;
 
-                // Draw Y grid
-                var ticks = this.yScale.ticks(this.config.axes.y.ticks.count);
+          // Draw Y grid
+          var ticks = this.yScale.ticks(this.config.axes.y.ticks.count);
+          this.ctx.beginPath();
+          this.ctx.lineWidth = 1;
+          this.ctx.strokeStyle = Chart.helpers.toRGBA(this.config.font.color, 0.1);
+          ticks.forEach(function (tick) {
+            var pos = _this.yScale(tick);
 
-                this.ctx.beginPath();
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeStyle = Chart.helpers.toRGBA(this.config.font.color, 0.1);
+            _this.ctx.moveTo(0, pos);
 
-                ticks.forEach(function (tick) {
-                    var pos = _this.yScale(tick);
-                    _this.ctx.moveTo(0, pos);
-                    _this.ctx.lineTo(_this.area.width, pos);
-                });
-
-                this.ctx.stroke();
-            }
-        });
+            _this.ctx.lineTo(_this.area.width, pos);
+          });
+          this.ctx.stroke();
+        },
+        _clear: function _clear() {
+          this.ctx.fillStyle = this.config.background.color;
+          this.ctx.clearRect(0, 0, this.width, this.height);
+          this.ctx.rect(0, 0, this.width, this.height);
+          this.ctx.fill();
+        }
+      };
+      Chart.components.register(component);
     }
 
     function axes (Chart) {
-        Chart.components.register({
-            afterDraw: function afterDraw() {
-                var _this = this;
+      Chart.components.register({
+        afterDraw: function afterDraw() {
+          var _this = this;
 
-                // Draw X axis
-                this.ctx.beginPath();
-                this.ctx.font = this.config.axes.x.ticks.font.size + "px " + this.config.font.family;
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeStyle = Chart.helpers.toRGBA(this.config.font.color, 0.25);
-                this.ctx.textAlign = "center";
-                this.ctx.textBaseline = "hanging";
+          // Draw X axis
+          this.ctx.beginPath();
+          this.ctx.font = "".concat(this.config.axes.x.ticks.font.size, "px ").concat(this.config.font.family);
+          this.ctx.lineWidth = 1;
+          this.ctx.strokeStyle = Chart.helpers.toRGBA(this.config.font.color, 0.25);
+          this.ctx.textAlign = "center";
+          this.ctx.textBaseline = "hanging";
+          this.xScale.ticks(this.config.axes.x.ticks.count).forEach(function (tick) {
+            var pos = _this.xScale(tick);
 
-                this.xScale.ticks(this.config.axes.x.ticks.count).forEach(function (tick) {
-                    var pos = _this.xScale(tick);
-                    _this.ctx.moveTo(pos, _this.area.height);
-                    _this.ctx.lineTo(pos, _this.area.height + _this.config.axes.x.ticks.size);
+            _this.ctx.moveTo(pos, _this.area.height);
 
-                    _this.ctx.fillStyle = _this.config.font.color;
-                    _this.ctx.fillText(_this.xFormat(tick), pos, _this.area.height + _this.config.axes.x.ticks.size * 1.35);
-                });
-                this.ctx.stroke();
+            _this.ctx.lineTo(pos, _this.area.height + _this.config.axes.x.ticks.size);
 
-                this.ctx.moveTo(0, this.area.height);
-                this.ctx.lineTo(this.area.width, this.area.height);
-                this.ctx.stroke();
+            _this.ctx.fillStyle = _this.config.font.color;
 
-                // Draw Y axis
-                if (this.config.axes.y.label.text) {
-                    this.ctx.save();
+            _this.ctx.fillText(_this.xFormat(tick), pos, _this.area.height + _this.config.axes.x.ticks.size * 1.35);
+          });
+          this.ctx.stroke();
+          this.ctx.moveTo(0, this.area.height);
+          this.ctx.lineTo(this.area.width, this.area.height);
+          this.ctx.stroke(); // Draw Y axis
 
-                    this.ctx.font = this.config.axes.y.label.size + "px " + this.config.font.family;
-                    this.ctx.fillStyle = Chart.helpers.toRGBA(this.config.font.color, 0.65);
-                    this.ctx.textAlign = "center";
-                    this.ctx.textBaseline = "middle";
+          if (this.config.axes.y.label.text) {
+            this.ctx.save();
+            this.ctx.font = "".concat(this.config.axes.y.label.size, "px ").concat(this.config.font.family);
+            this.ctx.fillStyle = Chart.helpers.toRGBA(this.config.font.color, 0.65);
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            this.ctx.translate(-this.area.left + this.config.margin, this.area.height / 2);
+            this.ctx.rotate(-Math.PI / 2);
+            this.ctx.fillText(this.config.axes.y.label.text, 0, 0);
+            this.ctx.restore();
+          }
 
-                    this.ctx.translate(-this.area.left + this.config.margin, this.area.height / 2);
-                    this.ctx.rotate(-Math.PI / 2);
-                    this.ctx.fillText(this.config.axes.y.label.text, 0, 0);
+          this.ctx.font = "".concat(this.config.axes.y.ticks.font.size, "px ").concat(this.config.font.family);
+          this.ctx.textAlign = "right";
+          this.ctx.textBaseline = "middle";
+          this.yScale.ticks(this.config.axes.y.ticks.count).forEach(function (tick) {
+            _this.ctx.fillStyle = _this.config.font.color;
 
-                    this.ctx.restore();
-                }
-
-                this.ctx.font = this.config.axes.y.ticks.font.size + "px " + this.config.font.family;
-                this.ctx.textAlign = "right";
-                this.ctx.textBaseline = "middle";
-
-                this.yScale.ticks(this.config.axes.y.ticks.count).forEach(function (tick) {
-                    _this.ctx.fillStyle = _this.config.font.color;
-                    _this.ctx.fillText(_this.yFormat(tick), -_this.config.axes.x.ticks.size, _this.yScale(tick));
-                });
-            }
-        });
+            _this.ctx.fillText(_this.yFormat(tick), -_this.config.axes.x.ticks.size, _this.yScale(tick));
+          });
+        }
+      });
     }
 
     function data (Chart) {
-        Chart.components.register({
-            update: function update() {
-                switch (this.config.axes.y.stack) {
-                    case "normal":
-                    case "percent":
-                        {
-                            var data = {},
-                                keys = [];
+      Chart.components.register({
+        update: function update() {
+          switch (this.config.axes.y.stack) {
+            case "normal":
+            case "percent":
+              {
+                var data = {},
+                    keys = [];
+                this.config.series.forEach(function (series) {
+                  if (series.points) {
+                    series.points.forEach(function (point) {
+                      if (series.disabled) {
+                        return;
+                      }
 
-                            this.config.series.forEach(function (series) {
-                                if (series.points) {
-                                    series.points.forEach(function (point) {
-                                        if (series.disabled) {
-                                            return;
-                                        }
+                      var date = point[0] * 1000;
 
-                                        var date = point[0] * 1000;
-                                        if (!data[date]) {
-                                            data[date] = { date: date };
-                                        }
+                      if (!data[date]) {
+                        data[date] = {
+                          date: date
+                        };
+                      }
 
-                                        data[date][series.name] = point[1];
-                                    });
-                                }
+                      data[date][series.name] = point[1];
+                    });
+                  }
 
-                                keys.push(series.name);
-                            });
+                  keys.push(series.name);
+                });
 
-                            if (this.config.axes.y.stack == "percent") {
-                                Object.keys(data).forEach(function (date) {
-                                    var keys = Object.keys(data[date]),
-                                        sum = keys.reduce(function (sum, key) {
-                                        return key != "date" ? sum + data[date][key] : sum;
-                                    }, 0);
-
-                                    keys.forEach(function (key) {
-                                        if (key != "date" && sum != 0) {
-                                            data[date][key] /= sum;
-                                        }
-                                    });
-                                });
-                            }
-
-                            var stack = d3.stack().keys(keys).order(d3.stackOrderReverse);
-
-                            this.data = stack(Object.values(data)).map(function (series) {
-                                return series.map(function (a) {
-                                    return { x: a.data.date, y0: a[0], y1: a[1] };
-                                });
-                            });
-
-                            break;
-                        }
-
-                    default:
-                        this.data = this.config.series.map(function (series) {
-                            return series.points ? series.points.map(function (a) {
-                                return { x: a[0] * 1000, y1: a[1] };
-                            }) : [];
-                        });
+                if (this.config.axes.y.stack == "percent") {
+                  Object.keys(data).forEach(function (date) {
+                    var keys = Object.keys(data[date]),
+                        sum = keys.reduce(function (sum, key) {
+                      return key != "date" ? sum + data[date][key] : sum;
+                    }, 0);
+                    keys.forEach(function (key) {
+                      if (key != "date" && sum != 0) {
+                        data[date][key] /= sum;
+                      }
+                    });
+                  });
                 }
-            }
-        });
+
+                var stack = d3.stack().keys(keys).order(d3.stackOrderReverse);
+                this.data = stack(Object.values(data)).map(function (series) {
+                  return series.map(function (a) {
+                    return {
+                      x: a.data.date,
+                      y0: a[0],
+                      y1: a[1]
+                    };
+                  });
+                });
+                break;
+              }
+
+            default:
+              this.data = this.config.series.map(function (series) {
+                return series.points ? series.points.map(function (a) {
+                  return {
+                    x: a[0] * 1000,
+                    y1: a[1]
+                  };
+                }) : [];
+              });
+          }
+        }
+      });
     }
 
     function events (Chart) {
-        Chart.components.register({
-            destroy: function destroy() {
-                var _this = this;
+      Chart.components.register({
+        destroy: function destroy() {
+          var _this = this;
 
-                if (!this.config.events.handleEvent) {
-                    return;
-                }
+          if (!this.config.events.handleEvent) {
+            return;
+          }
 
-                ["mousedown", "mouseup", "mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
-                    _this.canvas.removeEventListener(event, _this.config.events.handleEvent);
-                });
-            },
-            afterDraw: function afterDraw() {
-                var _this2 = this;
+          ["mousedown", "mouseup", "mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
+            _this.canvas.removeEventListener(event, _this.config.events.handleEvent);
+          });
+        },
+        afterDraw: function afterDraw() {
+          var _this2 = this;
 
-                if (!this.config.events.handleEvent) {
-                    return;
-                }
+          if (!this.config.events.handleEvent) {
+            return;
+          }
 
-                ["mousedown", "mouseup", "mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
-                    _this2.canvas.addEventListener(event, _this2.config.events.handleEvent.bind(_this2));
-                });
-            }
-        });
+          ["mousedown", "mouseup", "mouseenter", "mouseleave", "mousemove"].forEach(function (event) {
+            _this2.canvas.addEventListener(event, _this2.config.events.handleEvent.bind(_this2));
+          });
+        }
+      });
     }
 
     function lines (Chart) {
-        var component = {
-            init: function init() {
-                Object.assign(this, {
-                    addLine: component._add,
-                    removeLine: component._remove
-                });
-            },
-            afterDraw: function afterDraw() {
-                var _this = this;
+      var component = {
+        init: function init() {
+          Object.assign(this, {
+            addLine: component._add,
+            removeLine: component._remove
+          });
+        },
+        afterDraw: function afterDraw() {
+          var _this = this;
 
-                this.ctx.save();
-                this.ctx.font = this.config.axes.y.ticks.font.size - 2 + "px " + this.config.font.family;
-                this.ctx.textAlign = "right";
-                this.ctx.textBaseline = "middle";
+          this.ctx.save();
+          this.ctx.font = "".concat(this.config.axes.y.ticks.font.size - 2, "px ").concat(this.config.font.family);
+          this.ctx.textAlign = "right";
+          this.ctx.textBaseline = "middle";
+          this.config.axes.y.lines.forEach(function (line) {
+            var pos = _this.yScale(line.y),
+                xDelta = 0; // Skip lines outside of area
 
-                this.config.axes.y.lines.forEach(function (line) {
-                    var pos = _this.yScale(line.y),
-                        xDelta = 0;
 
-                    // Skip lines outside of area
-                    if (pos < 0) {
-                        return;
-                    }
-
-                    if (!line.color) {
-                        line.color = _this.config.font.color;
-                    }
-
-                    if (line.label) {
-                        var text = typeof line.label == "boolean" ? _this.yFormat(line.y) : line.label,
-                            measure = _this.ctx.measureText(text);
-
-                        var yDelta = 6,
-                            yDeltaLow = Math.round(yDelta / 3),
-                            yDeltaMedium = Math.round(yDelta * 2 / 3),
-                            yStart = -_this.config.axes.x.ticks.size - measure.width;
-
-                        _this.ctx.save();
-
-                        xDelta = Math.abs(yStart) - _this.area.left + _this.config.margin / 2;
-                        if (xDelta > 0) {
-                            _this.ctx.translate(xDelta, 0);
-                        }
-
-                        _this.ctx.fillStyle = line.color;
-
-                        // Draw label background
-                        _this.ctx.beginPath();
-                        _this.ctx.moveTo(yStart, pos - yDelta);
-                        _this.ctx.lineTo(-_this.config.axes.x.ticks.size, pos - yDelta);
-                        _this.ctx.quadraticCurveTo(-yDeltaMedium, pos - yDelta, 0, pos);
-                        _this.ctx.quadraticCurveTo(-yDeltaMedium, pos + yDelta, -_this.config.axes.x.ticks.size, pos + yDelta);
-                        _this.ctx.lineTo(yStart, pos + yDelta);
-                        _this.ctx.quadraticCurveTo(yStart - yDeltaLow, pos + yDelta, yStart - yDeltaLow, pos + yDeltaMedium);
-                        _this.ctx.lineTo(yStart - yDeltaLow, pos - yDeltaMedium);
-                        _this.ctx.quadraticCurveTo(yStart - yDeltaLow, pos - yDelta, yStart, pos - yDelta);
-                        _this.ctx.closePath();
-                        _this.ctx.fill();
-
-                        // Draw text on label
-                        _this.ctx.fillStyle = Chart.helpers.toRGBA(_this.config.background.color, 0.8);
-                        _this.ctx.fillText(text, -_this.config.axes.x.ticks.size, pos);
-
-                        _this.ctx.restore();
-                    }
-
-                    // Draw line
-                    _this.ctx.save();
-
-                    _this.ctx.lineWidth = 1;
-                    _this.ctx.strokeStyle = line.color;
-
-                    _this.ctx.beginPath();
-                    if (line.dashed) {
-                        _this.ctx.setLineDash([4, 4]);
-                    }
-                    _this.ctx.moveTo(xDelta > 0 ? xDelta : 0, pos);
-                    _this.ctx.lineTo(_this.area.width, pos);
-                    _this.ctx.stroke();
-
-                    _this.ctx.restore();
-                });
-
-                this.ctx.restore();
-            },
-            _add: function _add(id, line) {
-                this.config.axes.y.lines.push(Object.assign(line, { id: id }));
-                this.draw();
-            },
-            _remove: function _remove(id) {
-                var length = this.config.axes.y.lines.length;
-
-                this.config.axes.y.lines = this.config.axes.y.lines.filter(function (a) {
-                    return a.id !== id;
-                });
-
-                if (this.config.axes.y.lines.length !== length) {
-                    this.draw();
-                }
+            if (pos < 0) {
+              return;
             }
-        };
 
-        Chart.components.register(component);
+            if (!line.color) {
+              line.color = _this.config.font.color;
+            }
+
+            if (line.label) {
+              var text = typeof line.label == "boolean" ? _this.yFormat(line.y) : line.label,
+                  measure = _this.ctx.measureText(text);
+
+              var yDelta = 6,
+                  yDeltaLow = Math.round(yDelta / 3),
+                  yDeltaMedium = Math.round(yDelta * 2 / 3),
+                  yStart = -_this.config.axes.x.ticks.size - measure.width;
+
+              _this.ctx.save();
+
+              xDelta = Math.abs(yStart) - _this.area.left + _this.config.margin / 2;
+
+              if (xDelta > 0) {
+                _this.ctx.translate(xDelta, 0);
+              }
+
+              _this.ctx.fillStyle = line.color; // Draw label background
+
+              _this.ctx.beginPath();
+
+              _this.ctx.moveTo(yStart, pos - yDelta);
+
+              _this.ctx.lineTo(-_this.config.axes.x.ticks.size, pos - yDelta);
+
+              _this.ctx.quadraticCurveTo(-yDeltaMedium, pos - yDelta, 0, pos);
+
+              _this.ctx.quadraticCurveTo(-yDeltaMedium, pos + yDelta, -_this.config.axes.x.ticks.size, pos + yDelta);
+
+              _this.ctx.lineTo(yStart, pos + yDelta);
+
+              _this.ctx.quadraticCurveTo(yStart - yDeltaLow, pos + yDelta, yStart - yDeltaLow, pos + yDeltaMedium);
+
+              _this.ctx.lineTo(yStart - yDeltaLow, pos - yDeltaMedium);
+
+              _this.ctx.quadraticCurveTo(yStart - yDeltaLow, pos - yDelta, yStart, pos - yDelta);
+
+              _this.ctx.closePath();
+
+              _this.ctx.fill(); // Draw text on label
+
+
+              _this.ctx.fillStyle = Chart.helpers.toRGBA(_this.config.background.color, 0.8);
+
+              _this.ctx.fillText(text, -_this.config.axes.x.ticks.size, pos);
+
+              _this.ctx.restore();
+            } // Draw line
+
+
+            _this.ctx.save();
+
+            _this.ctx.lineWidth = 1;
+            _this.ctx.strokeStyle = line.color;
+
+            _this.ctx.beginPath();
+
+            if (line.dashed) {
+              _this.ctx.setLineDash([4, 4]);
+            }
+
+            _this.ctx.moveTo(xDelta > 0 ? xDelta : 0, pos);
+
+            _this.ctx.lineTo(_this.area.width, pos);
+
+            _this.ctx.stroke();
+
+            _this.ctx.restore();
+          });
+          this.ctx.restore();
+        },
+        _add: function _add(id, line) {
+          this.config.axes.y.lines.push(Object.assign(line, {
+            id: id
+          }));
+          this.draw();
+        },
+        _remove: function _remove(id) {
+          var length = this.config.axes.y.lines.length;
+          this.config.axes.y.lines = this.config.axes.y.lines.filter(function (a) {
+            return a.id !== id;
+          });
+
+          if (this.config.axes.y.lines.length !== length) {
+            this.draw();
+          }
+        }
+      };
+      Chart.components.register(component);
     }
 
-    function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+    function _toConsumableArray(arr) {
+      return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+    }
+
+    function _arrayWithoutHoles(arr) {
+      if (Array.isArray(arr)) {
+        for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+        return arr2;
+      }
+    }
+
+    function _iterableToArray(iter) {
+      if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    }
+
+    function _nonIterableSpread() {
+      throw new TypeError("Invalid attempt to spread non-iterable instance");
+    }
 
     function scales (Chart) {
-        var component = {
-            layout: function layout() {
-                var _this = this;
+      var component = {
+        layout: function layout() {
+          var _this = this;
 
-                this.yScale = d3.scaleLinear().domain(component._getDomain.call(this, "y", "y1")).range([this.area.height, 0]).nice();
+          this.yScale = d3.scaleLinear().domain(component._getDomain.call(this, "y", "y1")).range([this.area.height, 0]).nice();
+          this.yFormat = this.config.axes.y.stack == "percent" ? d3.format(".0%") : this.config.axes.y.ticks.format; // Adapt area width to Y axis labels
 
-                this.yFormat = this.config.axes.y.stack == "percent" ? d3.format(".0%") : this.config.axes.y.ticks.format;
+          this.ctx.font = "".concat(this.config.axes.y.ticks.font.size, "px ").concat(this.config.font.family);
+          this.area.width -= Math.max.apply(Math, _toConsumableArray(this.yScale.ticks(this.config.axes.y.ticks.count).map(function (a) {
+            return _this.ctx.measureText(_this.yFormat(a)).width;
+          })));
+          this.xScale = d3.scaleTime().domain(component._getDomain.call(this, "x", "x")).range([0, this.area.width]);
 
-                // Adapt area width to Y axis labels
-                this.ctx.font = this.config.axes.y.ticks.font.size + "px " + this.config.font.family;
-                this.area.width -= Math.max.apply(Math, _toConsumableArray(this.yScale.ticks(this.config.axes.y.ticks.count).map(function (a) {
-                    return _this.ctx.measureText(_this.yFormat(a)).width;
-                })));
+          this.xFormat = function (date) {
+            return (d3.timeSecond(date) < date ? d3.timeFormat(".%L") : d3.timeMinute(date) < date ? d3.timeFormat(":%S") : d3.timeHour(date) < date ? d3.timeFormat("%H:%M") : d3.timeDay(date) < date ? d3.timeFormat("%H:00") : d3.timeMonth(date) < date ? d3.timeFormat("%a %d") : d3.timeYear(date) < date ? d3.timeFormat("%B") : d3.timeFormat("%Y"))(date);
+          };
+        },
+        _getDomain: function _getDomain(axis, key) {
+          var _this2 = this;
 
-                this.xScale = d3.scaleTime().domain(component._getDomain.call(this, "x", "x")).range([0, this.area.width]);
+          var min, max;
 
-                this.xFormat = function (date) {
-                    return (d3.timeSecond(date) < date ? d3.timeFormat(".%L") : d3.timeMinute(date) < date ? d3.timeFormat(":%S") : d3.timeHour(date) < date ? d3.timeFormat("%H:%M") : d3.timeDay(date) < date ? d3.timeFormat("%H:00") : d3.timeMonth(date) < date ? d3.timeFormat("%a %d") : d3.timeYear(date) < date ? d3.timeFormat("%B") : d3.timeFormat("%Y"))(date);
-                };
-            },
-            _getDomain: function _getDomain(axis, key) {
-                var _this2 = this;
+          if (this.config.axes[axis].min !== null) {
+            min = this.config.axes[axis].min;
+          } else {
+            min = d3.min(this.data, function (datum, idx) {
+              if (!_this2.config.series[idx].disabled) {
+                return d3.min(datum, function (a) {
+                  return a[key];
+                });
+              }
+            });
+          }
 
-                var min = void 0,
-                    max = void 0;
+          if (this.config.axes[axis].max !== null) {
+            max = this.config.axes[axis].max;
+          } else {
+            max = d3.max(this.data, function (datum, idx) {
+              if (!_this2.config.series[idx].disabled) {
+                return d3.max(datum, function (a) {
+                  return a[key];
+                });
+              }
+            });
+          }
 
-                if (this.config.axes[axis].min !== null) {
-                    min = this.config.axes[axis].min;
-                } else {
-                    min = d3.min(this.data, function (datum, idx) {
-                        if (!_this2.config.series[idx].disabled) {
-                            return d3.min(datum, function (a) {
-                                return a[key];
-                            });
-                        }
-                    });
-                }
+          if (axis == "y") {
+            // Start Y axis at zero
+            if (min > 0) {
+              min = 0;
+            } // Center Y axis zero if negative values are present
+            else if (this.config.axes.y.center && min < 0) {
+                max = Math.max(max, Math.abs(min));
+                min = max * -1;
+              }
+          }
 
-                if (this.config.axes[axis].max !== null) {
-                    max = this.config.axes[axis].max;
-                } else {
-                    max = d3.max(this.data, function (datum, idx) {
-                        if (!_this2.config.series[idx].disabled) {
-                            return d3.max(datum, function (a) {
-                                return a[key];
-                            });
-                        }
-                    });
-                }
-
-                if (axis == "y") {
-                    // Start Y axis at zero
-                    if (min > 0) {
-                        min = 0;
-                    }
-
-                    // Center Y axis zero if negative values are present
-                    else if (this.config.axes.y.center && min < 0) {
-                            max = Math.max(max, Math.abs(min));
-                            min = max * -1;
-                        }
-                }
-
-                return [min || 0, max || 1];
-            }
-        };
-
-        Chart.components.register(component);
+          return [min || 0, max || 1];
+        }
+      };
+      Chart.components.register(component);
     }
 
     function series (Chart) {
-        var component = {
-            init: function init() {
-                Object.assign(this, {
-                    selectSeries: component._select
-                });
-            },
-            draw: function draw() {
-                var _this = this;
+      var component = {
+        init: function init() {
+          Object.assign(this, {
+            selectSeries: component._select
+          });
+        },
+        draw: function draw() {
+          var _this = this;
 
-                var area = void 0;
-                if (this.config.type == "area") {
-                    area = d3.area().defined(function (a) {
-                        return a.y1 !== null;
-                    }).x(function (a) {
-                        return _this.xScale(a.x);
-                    }).y0(function (a) {
-                        return _this.yScale(a.y0 || 0);
-                    }).y1(function (a) {
-                        return _this.yScale(a.y1);
-                    }).context(this.ctx);
-                }
+          var area;
 
-                var line = d3.line().defined(function (a) {
-                    return a.y1 !== null;
-                }).x(function (a) {
-                    return _this.xScale(a.x);
-                }).y(function (a) {
-                    return _this.yScale(a.y1);
-                }).context(this.ctx);
+          if (this.config.type == "area") {
+            area = d3.area().defined(function (a) {
+              return a.y1;
+            }).x(function (a) {
+              return _this.xScale(a.x);
+            }).y0(function (a) {
+              return _this.yScale(a.y0 || 0);
+            }).y1(function (a) {
+              return _this.yScale(a.y1);
+            }).context(this.ctx);
+          }
 
-                var top = this.config.axes.y.max ? this.yScale(this.config.axes.y.max) : 0,
-                    bottom = (this.config.axes.y.min ? this.yScale(this.config.axes.y.min) : this.area.height) - top;
-
-                this.ctx.save();
-                this.ctx.rect(0, top, this.area.width, bottom);
-                this.ctx.clip();
-
-                this.data.forEach(function (datum, idx) {
-                    if (_this.config.series[idx].disabled) {
-                        return;
-                    }
-
-                    if (!_this.config.series[idx].color) {
-                        _this.config.series[idx].color = _this.config.colors[idx % _this.config.colors.length];
-                    }
-
-                    if (_this.config.type == "area" && !_this._highlight) {
-                        _this.ctx.beginPath();
-                        area(datum);
-                        _this.ctx.fillStyle = Chart.helpers.toRGBA(_this.config.series[idx].color, 0.65);
-                        _this.ctx.fill();
-                    }
-
-                    _this.ctx.beginPath();
-                    line(datum);
-                    _this.ctx.strokeStyle = _this.config.series[idx].color;
-                    _this.ctx.lineWidth = 1.5;
-                    _this.ctx.stroke();
-                });
-
-                this.ctx.restore();
-            },
-            _select: function _select(idx) {
-                var toggle = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-                if (idx >= this.config.series.length) {
-                    return;
-                }
-
-                if (!toggle) {
-                    var state = null;
-                    if (this.config.series.filter(function (a) {
-                        return !a.disabled;
-                    }).length == 1 && !this.config.series[idx].disabled) {
-                        state = false;
-                    }
-
-                    this.config.series.forEach(function (series, seriesIdx) {
-                        series.disabled = state !== null ? state : seriesIdx !== idx;
-                    });
-                } else {
-                    this.config.series[idx].disabled = !this.config.series[idx].disabled;
-                }
-
-                this.draw();
+          var line = d3.line().defined(function (a) {
+            return a.y1;
+          }).x(function (a) {
+            return _this.xScale(a.x);
+          }).y(function (a) {
+            return _this.yScale(a.y1);
+          }).context(this.ctx);
+          var top = this.config.axes.y.max ? this.yScale(this.config.axes.y.max) : 0,
+              bottom = (this.config.axes.y.min ? this.yScale(this.config.axes.y.min) : this.area.height) - top;
+          this.ctx.save();
+          this.ctx.rect(0, top, this.area.width, bottom);
+          this.ctx.clip();
+          this.data.forEach(function (datum, idx) {
+            if (_this.config.series[idx].disabled) {
+              return;
             }
-        };
 
-        Chart.components.register(component);
+            if (!_this.config.series[idx].color) {
+              _this.config.series[idx].color = _this.config.colors[idx % _this.config.colors.length];
+            }
+
+            if (_this.config.type == "area" && !_this._highlight) {
+              _this.ctx.beginPath();
+
+              area(datum);
+              _this.ctx.fillStyle = Chart.helpers.toRGBA(_this.config.series[idx].color, 0.65);
+
+              _this.ctx.fill();
+            }
+
+            _this.ctx.beginPath();
+
+            line(datum);
+            _this.ctx.strokeStyle = _this.config.series[idx].color;
+            _this.ctx.lineWidth = 1.5;
+
+            _this.ctx.stroke();
+          });
+          this.ctx.restore();
+        },
+        _select: function _select(idx) {
+          var toggle = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+          if (idx >= this.config.series.length) {
+            return;
+          }
+
+          if (!toggle) {
+            var state = null;
+
+            if (this.config.series.filter(function (a) {
+              return !a.disabled;
+            }).length == 1 && !this.config.series[idx].disabled) {
+              state = false;
+            }
+
+            this.config.series.forEach(function (series, seriesIdx) {
+              series.disabled = state !== null ? state : seriesIdx !== idx;
+            });
+          } else {
+            this.config.series[idx].disabled = !this.config.series[idx].disabled;
+          }
+
+          this.draw();
+        }
+      };
+      Chart.components.register(component);
     }
 
     function titles (Chart) {
-        Chart.components.register({
-            layout: function layout() {
-                var heightDelta = 0;
+      Chart.components.register({
+        layout: function layout() {
+          var heightDelta = 0;
 
-                if (this.config.titles.main.text) {
-                    heightDelta += this.config.titles.main.size;
-                }
+          if (this.config.titles.main.text) {
+            heightDelta += this.config.titles.main.size;
+          }
 
-                if (this.config.titles.subtitle.text) {
-                    heightDelta += this.config.titles.subtitle.size;
-                }
+          if (this.config.titles.subtitle.text) {
+            heightDelta += this.config.titles.subtitle.size;
+          }
 
-                if (heightDelta > 0) {
-                    this.area.height -= heightDelta + this.config.margin * 0.5;
-                    this.yScale.range([this.area.height, 0]);
-                }
-            },
-            draw: function draw() {
-                if (!this.config.titles.main.text && !this.config.titles.subtitle.text) {
-                    return;
-                }
+          if (heightDelta > 0) {
+            this.area.height -= heightDelta + this.config.margin * 0.5;
+            this.yScale.range([this.area.height, 0]);
+          }
+        },
+        draw: function draw() {
+          if (!this.config.titles.main.text && !this.config.titles.subtitle.text) {
+            return;
+          }
 
-                var top = this.config.margin * -1.5,
-                    delta = 0;
+          var top = this.config.margin * -1.5,
+              delta = 0;
+          this.ctx.save();
+          this.ctx.textAlign = "center";
 
-                this.ctx.save();
-                this.ctx.textAlign = "center";
+          if (this.config.titles.main.text) {
+            this.ctx.font = "".concat(this.config.titles.main.size, "px ").concat(this.config.font.family);
+            this.ctx.fillStyle = this.config.font.color;
+            this.ctx.fillText(this.config.titles.main.text, this.area.width / 2, top);
+            delta += this.config.titles.main.size + this.config.margin * 0.125;
+          }
 
-                if (this.config.titles.main.text) {
-                    this.ctx.font = this.config.titles.main.size + "px " + this.config.font.family;
-                    this.ctx.fillStyle = this.config.font.color;
-                    this.ctx.fillText(this.config.titles.main.text, this.area.width / 2, top);
+          if (this.config.titles.subtitle.text) {
+            this.ctx.font = "".concat(this.config.titles.subtitle.size, "px ").concat(this.config.font.family);
+            this.ctx.fillStyle = Chart.helpers.toRGBA(this.config.font.color, 0.5);
+            this.ctx.fillText(this.config.titles.subtitle.text, this.area.width / 2, top + delta);
+          }
 
-                    delta += this.config.titles.main.size + this.config.margin * 0.125;
-                }
-
-                if (this.config.titles.subtitle.text) {
-                    this.ctx.font = this.config.titles.subtitle.size + "px " + this.config.font.family;
-                    this.ctx.fillStyle = Chart.helpers.toRGBA(this.config.font.color, 0.5);
-                    this.ctx.fillText(this.config.titles.subtitle.text, this.area.width / 2, top + delta);
-                }
-
-                this.ctx.restore();
-            }
-        });
+          this.ctx.restore();
+        }
+      });
     }
 
     Chart.helpers = helpers;
     Chart.colors = defaultConfig.colors;
     Chart.components = components;
-
     area(Chart);
     axes(Chart);
     data(Chart);
