@@ -1,4 +1,4 @@
-// https://facette.io/ Version 0.4.1. Copyright 2018 Vincent Batoufflet.
+// https://facette.io/ Version 0.4.2. Copyright 2019 Vincent Batoufflet.
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -2851,7 +2851,7 @@
 
           if (axis == "y") {
             // Start Y axis at zero
-            if (min > 0) {
+            if (min > 0 && !this.config.axes.y.min) {
               min = 0;
             } // Center Y axis zero if negative values are present
             else if (this.config.axes.y.center && min < 0) {
